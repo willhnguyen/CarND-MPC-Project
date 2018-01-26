@@ -11,6 +11,7 @@
 
 // for convenience
 using json = nlohmann::json;
+using namespace std;
 
 // For converting back and forth between radians and degrees.
 constexpr double pi() { return M_PI; }
@@ -91,15 +92,35 @@ int main() {
           double py = j[1]["y"];
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
+          double steer = j[1]["steering_angle"];
+          double throttle = j[1]["throttle"];
 
-          /*
-          * TODO: Calculate steering angle and throttle using MPC.
-          *
-          * Both are in between [-1, 1].
-          *
-          */
-          double steer_value;
-          double throttle_value;
+          // Convert trajectory data to vehicle space
+          Eigen::VectorXd ptsx_(ptsx.size()), ptsy_(ptsy.size());
+          for(int i = 0; i < ptsx.size(); ++i) {
+            ptsx_(i) = cos(-psi) * (ptsx[i] - px) - sin(-psi) * (ptsy[i] - py);
+            ptsy_(i) = sin(-psi) * (ptsx[i] - px) + cos(-psi) * (ptsy[i] - py);
+          }
+
+          // Polyfit trajectory
+          Eigen::VectorXd coeffs = polyfit(ptsx_, ptsy_, 3);
+
+          // Create new state with latency of 0.1 s
+          Eigen::VectorXd state(6);
+          double dt = 0.1; // latency term
+          double x0 = v * dt,
+                 y0 = 0,
+                 psi0 = -v * steer / 2.67 * dt,
+                 v0 = v,
+                 cte0 = polyeval(coeffs, 0),
+                 epsi0 = -atan(coeffs[1]);
+          state << x0, y0, psi0, v0, cte0, epsi0;
+
+          // Solve and pass to simulator
+          vector<double> vals = mpc.Solve(state, coeffs);
+
+          double steer_value = -vals[0] / deg2rad(25); // negative because of simulator's backwards angle notation
+          double throttle_value = vals[1];
 
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
@@ -107,7 +128,7 @@ int main() {
           msgJson["steering_angle"] = steer_value;
           msgJson["throttle"] = throttle_value;
 
-          //Display the MPC predicted trajectory 
+          //Display the MPC predicted trajectory
           vector<double> mpc_x_vals;
           vector<double> mpc_y_vals;
 
@@ -120,6 +141,10 @@ int main() {
           //Display the waypoints/reference line
           vector<double> next_x_vals;
           vector<double> next_y_vals;
+          for(int i = 0; i < 20; ++i) {
+            next_x_vals.push_back(i * 2.5);
+            next_y_vals.push_back(polyeval(coeffs, i * 2.5));
+          }
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Yellow line
