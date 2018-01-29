@@ -48,6 +48,10 @@ As learned from the PID project, the differential term can help the car transiti
 
 The costs calculations also include the model constraints. This portion checks that the model behaves as expected over each time step.
 
+Once these costs have been set up, the program will simulate a series of actuator control values and determine which provides the lowest error overall. Then, the program will return the beginning subset of the determined control values to pass on to the car to use in real time. Not all control values are passed because simulations and the real world differ enough that we can only rely on a subset of the simulation.
+
+For this project, it is also assumed that latency occurs from when the data is sent by the MPC to when it is received by the car. This latency can be considered by predicting the car's location after the latency has occured. This new location and state is then passed to the MPC as the car's initial state for the MPC simulation.
+
 ## Project Implementation Details
 The `src/mpc.cpp`, `src/mpc.h`, and `src/main.cpp` files were modified in this project.
 
