@@ -27,7 +27,7 @@ $ cmake ..
 $ make
 ```
 
-To see the program in action, make sure to download the [Term 2 simulator](https://github.com/udacity/self-driving-car-sim/releases), run it, and choose the third simulation option. Then, execute the program by executing the `mpc` program in the `build` folder.
+To see the program in action, make sure to download the [Term 2 simulator](https://github.com/udacity/self-driving-car-sim/releases), run it, and choose the fourth simulation option. Then, execute the program by executing the `mpc` program in the `build` folder.
 
 ```bash
 $ ./mpc
